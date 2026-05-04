@@ -1,40 +1,365 @@
 <!DOCTYPE html>
-<html lang="zh">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>财神爷 · 多策略Dashboard</title>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财神爷 — 策略仪表盘</title>
+<script src="https://cdn.plot.ly/plotly-2.35.9.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#1e1e2e;color:#cdd6f4;font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center}
-.container{padding:40px}
-h1{font-size:2.5rem;margin-bottom:8px}
-h2{font-size:1.2rem;color:#6c7086;font-weight:400;margin-bottom:32px}
-.cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
-.card{background:#181825;border-radius:12px;padding:24px 32px;min-width:150px}
-.card-title{color:#6c7086;font-size:0.85rem;margin-bottom:8px}
-.card-value{font-size:1.8rem;font-weight:700}
-.card-detail{color:#6c7086;font-size:0.8rem;margin-top:4px}
-.status{color:#a6e3a1;font-size:1.1rem;margin-top:32px}
-.footer{color:#6c7086;font-size:0.75rem;margin-top:48px}
-</style></head>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #11111b;
+    color: #cdd6f4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #313244;
+}
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #f5c2e7;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.header h1 span {
+    font-size: 28px;
+}
+.header .subtitle {
+    color: #6c7086;
+    font-size: 13px;
+}
+.header .subtitle .date { color: #a6e3a1; }
+.lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: #181825;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 2px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6c7086;
+    transition: all 0.2s;
+    user-select: none;
+    line-height: 1;
+    height: 24px;
+}
+.lang-toggle:hover { border-color: #585b70; color: #a6adc8; }
+.lang-toggle .active { color: #89b4fa; }
+.lang-toggle .sep { color: #45475a; padding: 0 2px; }
+.lang-toggle .inactive { color: #585b70; }
+.summary-bar {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: #181825;
+    border-radius: 12px;
+    border: 1px solid #313244;
+    flex-wrap: wrap;
+}
+.summary-item {
+    display: flex;
+    flex-direction: column;
+}
+.summary-item .label {
+    font-size: 11px;
+    color: #6c7086;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.summary-item .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f5c2e7;
+}
+.summary-item .value.positive { color: #a6e3a1; }
+.summary-item .value.negative { color: #f38ba8; }
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.card {
+    background: #181825;
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid #313244;
+}
+.card-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #bac2de;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #313244;
+}
+.card-body .kpi-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 13px;
+}
+.card-body .kpi-label { color: #6c7086; }
+.card-body .kpi-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.section {
+    margin-bottom: 24px;
+}
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f5c2e7;
+    margin-bottom: 12px;
+    padding-left: 8px;
+    border-left: 3px solid #cba6f7;
+}
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+@media (max-width: 700px) {
+    .heatmap-grid {
+        grid-template-columns: 1fr;
+    }
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #585b70;
+    font-size: 12px;
+    border-top: 1px solid #313244;
+    margin-top: 24px;
+}
+.footer a { color: #89b4fa; text-decoration: none; }
+</style>
+</head>
 <body>
-<div class="container">
-<h1>💰 财神爷 · 短线策略实盘</h1>
-<h2>正股+期权双轨 · 4策略各 $100K · Day 0</h2>
+<div class="header">
+    <h1><span>💰</span> <span data-i18n="title">财神爷 · 短线策略实盘</span></h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <div class="subtitle">
+            <span data-i18n="data-label">数据日期</span> · <span class="date" id="update-date"><span data-i18n="loading">加载中</span>...</span><br>
+            <span id="update-time" style="font-size:12px;color:#585b70;"></span>
+        </div>
+        <div class="lang-toggle" id="lang-toggle" onclick="toggleLang()" title="Switch language">
+            <span id="lang-en-label" class="inactive">EN</span>
+            <span class="sep">|</span>
+            <span id="lang-zh-label" class="active">CN</span>
+        </div>
+    </div>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-item">
+        <span class="label" data-i18n="best-strategy">最佳策略</span>
+        <span class="value" style="color:#cdd6f4">N/A</span>
+    </div>
+    <div class="summary-item">
+        <span class="label" data-i18n="strategies">策略数</span>
+        <span class="value">0</span>
+    </div>
+    <div class="summary-item">
+        <span class="label" data-i18n="tickers">总标的</span>
+        <span class="value">10</span>
+    </div>
+    <div class="summary-item">
+        <span class="label" data-i18n="period">周期</span>
+        <span class="value" data-i18n="period-val">6个月</span>
+    </div>
+</div>
+
 <div class="cards">
-  <div class="card" style="border-left:4px solid #89b4fa">
-    <div class="card-title">A·RS动量</div><div class="card-value" style="color:#89b4fa">$100,000</div><div class="card-detail">待启动</div>
-  </div>
-  <div class="card" style="border-left:4px solid #a6e3a1">
-    <div class="card-title">B·情绪驱动</div><div class="card-value" style="color:#a6e3a1">$100,000</div><div class="card-detail">待启动</div>
-  </div>
-  <div class="card" style="border-left:4px solid #f9e2af">
-    <div class="card-title">C·均值回归</div><div class="card-value" style="color:#f9e2af">$100,000</div><div class="card-detail">待启动</div>
-  </div>
-  <div class="card" style="border-left:4px solid #f38ba8">
-    <div class="card-title">D·财报事件</div><div class="card-value" style="color:#f38ba8">$100,000</div><div class="card-detail">待启动</div>
-  </div>
+
 </div>
-<div class="status">🟢 系统就绪 · 等待首次交易日</div>
-<div class="footer">财神爷交易系统 v3 · 首次真实交易日 2026-05-05</div>
+
+<div class="section" data-chart="equity">
+    <div class="section-title" data-i18n="section-equity">📈 资金曲线</div>
+    <div class="chart-wrap"><div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="f36f835d-6a37-40ab-b263-dd2cec2dd13d" class="plotly-graph-div" style="height:500px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("f36f835d-6a37-40ab-b263-dd2cec2dd13d")) {                    Plotly.newPlot(                        "f36f835d-6a37-40ab-b263-dd2cec2dd13d",                        [],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"font":{"size":18},"text":"\u8d44\u91d1\u66f2\u7ebf\u5bf9\u6bd4"},"legend":{"orientation":"h","y":-0.18,"bgcolor":"rgba(30,30,46,0.8)","bordercolor":"#45475a"},"xaxis":{"title":{"text":"\u65e5\u671f"},"gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"yaxis":{"title":{"text":"\u8d26\u6237\u6743\u76ca ($)"},"gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"hovermode":"x unified","height":500,"shapes":[{"line":{"color":"#585b70","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":100000,"y1":100000,"yref":"y"}],"annotations":[{"showarrow":false,"text":"\u521d\u59cb\u8d44\u91d1 $100k","x":1,"xanchor":"right","xref":"x domain","y":100000,"yanchor":"bottom","yref":"y"}],"font":{"color":"#cdd6f4","size":12},"hoverlabel":{"font":{"color":"#cdd6f4"},"bgcolor":"#313244"},"margin":{"l":60,"r":30,"t":40,"b":50},"paper_bgcolor":"#1e1e2e","plot_bgcolor":"#1e1e2e"},                        {"responsive": true}                    )                };            </script>        </div></div>
 </div>
-</body></html>
+
+<div class="section" data-chart="drawdown">
+    <div class="section-title" data-i18n="section-drawdown">📉 最大回撤</div>
+    <div class="chart-wrap"><div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="b7880ccb-26e5-40af-be83-1bde0f5d525f" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("b7880ccb-26e5-40af-be83-1bde0f5d525f")) {                    Plotly.newPlot(                        "b7880ccb-26e5-40af-be83-1bde0f5d525f",                        [],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"font":{"size":18},"text":"\u6700\u5927\u56de\u64a4\u5bf9\u6bd4"},"yaxis":{"title":{"text":"\u56de\u64a4 (%)"},"autorange":"reversed","gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"legend":{"orientation":"h","y":-0.2,"bgcolor":"rgba(30,30,46,0.8)","bordercolor":"#45475a"},"xaxis":{"title":{"text":"\u65e5\u671f"},"gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"hovermode":"x unified","height":400,"font":{"color":"#cdd6f4","size":12},"hoverlabel":{"font":{"color":"#cdd6f4"},"bgcolor":"#313244"},"margin":{"l":60,"r":30,"t":40,"b":50},"paper_bgcolor":"#1e1e2e","plot_bgcolor":"#1e1e2e"},                        {"responsive": true}                    )                };            </script>        </div></div>
+</div>
+
+<div class="section" data-chart="ranking">
+    <div class="section-title" data-i18n="section-ranking">🏆 策略收益排名</div>
+    <div class="chart-wrap"><div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="f4372190-0ec0-4810-9941-d39cad221880" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("f4372190-0ec0-4810-9941-d39cad221880")) {                    Plotly.newPlot(                        "f4372190-0ec0-4810-9941-d39cad221880",                        [{"hovertemplate":"%{x}\u003cbr\u003e%{y:+.2f}%\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":[]},"text":[],"textposition":"outside","x":[],"y":[],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"font":{"size":18},"text":"\u7b56\u7565\u6536\u76ca\u6392\u540d"},"xaxis":{"title":{"text":"\u7b56\u7565"},"gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"yaxis":{"title":{"text":"\u603b\u6536\u76ca (%)"},"gridcolor":"#313244","zerolinecolor":"#45475a","linecolor":"#585b70"},"height":400,"font":{"color":"#cdd6f4","size":12},"legend":{"bgcolor":"rgba(30,30,46,0.8)","bordercolor":"#45475a"},"hoverlabel":{"font":{"color":"#cdd6f4"},"bgcolor":"#313244"},"margin":{"l":60,"r":30,"t":40,"b":50},"paper_bgcolor":"#1e1e2e","plot_bgcolor":"#1e1e2e"},                        {"responsive": true}                    )                };            </script>        </div></div>
+</div>
+
+<div class="section" data-chart="monthly">
+    <div class="section-title" data-i18n="section-monthly">📊 月度收益率</div>
+    <div class="heatmap-grid">
+        
+    </div>
+</div>
+
+<div class="section" data-chart="trades">
+    <div class="section-title" data-i18n="section-trades">🎯 交易分布</div>
+    
+</div>
+
+<div class="footer">
+    <p><span data-i18n="footer-line1">财神爷交易系统 · 自动生成</span> · <a href="https://github.com/7ing/caishenye-dashboard">GitHub</a></p>
+    <p style="margin-top:4px;" data-i18n="footer-line2">数据仅用于演示，不构成投资建议</p>
+</div>
+
+<script>
+var currentLang = 'zh';
+
+var i18n = {
+    'title': { 'zh': '财神爷 · 短线策略实盘', 'en': "Caishenye · Short-term Strategy Live" },
+    'data-label': { 'zh': '数据日期', 'en': 'Data' },
+    'loading': { 'zh': '加载中', 'en': 'Loading' },
+    'best-strategy': { 'zh': '最佳策略', 'en': 'Best Strategy' },
+    'strategies': { 'zh': '策略数', 'en': 'Strategies' },
+    'tickers': { 'zh': '总标的', 'en': 'Tickers' },
+    'period': { 'zh': '周期', 'en': 'Period' },
+    'period-val': { 'zh': '6个月', 'en': '6 Months' },
+    'section-equity': { 'zh': '📈 资金曲线', 'en': '📈 Equity Curve' },
+    'section-drawdown': { 'zh': '📉 最大回撤', 'en': '📉 Max Drawdown' },
+    'section-ranking': { 'zh': '🏆 策略收益排名', 'en': '🏆 Strategy Ranking' },
+    'section-monthly': { 'zh': '📊 月度收益率', 'en': '📊 Monthly Returns' },
+    'section-trades': { 'zh': '🎯 交易分布', 'en': '🎯 Trades' },
+    'kpi-return': { 'zh': '收益', 'en': 'Return' },
+    'kpi-sharpe': { 'zh': 'Sharpe', 'en': 'Sharpe' },
+    'kpi-dd': { 'zh': '回撤', 'en': 'Drawdown' },
+    'kpi-winrate': { 'zh': '胜率', 'en': 'Win%' },
+    'kpi-trades': { 'zh': '交易', 'en': 'Trades' },
+    'footer-line1': { 'zh': '财神爷交易系统 · 自动生成', 'en': 'Caishenye Trading · Auto-generated' },
+    'footer-line2': { 'zh': '数据仅用于演示，不构成投资建议', 'en': 'Demo data only, not financial advice' },
+    'chart-equity-title': { 'zh': '资金曲线对比', 'en': 'Equity Curve Comparison' },
+    'chart-drawdown-title': { 'zh': '最大回撤对比', 'en': 'Max Drawdown Comparison' },
+    'chart-ranking-title': { 'zh': '策略收益排名', 'en': 'Strategy Ranking' },
+    'chart-equity-x': { 'zh': '日期', 'en': 'Date' },
+    'chart-equity-y': { 'zh': '账户权益 ($)', 'en': 'Account Equity ($)' },
+    'chart-drawdown-x': { 'zh': '日期', 'en': 'Date' },
+    'chart-drawdown-y': { 'zh': '回撤 (%)', 'en': 'Drawdown (%)' },
+    'chart-ranking-x': { 'zh': '策略', 'en': 'Strategy' },
+    'chart-ranking-y': { 'zh': '总收益 (%)', 'en': 'Total Return (%)' },
+    'annotation-initial': { 'zh': '初始资金 $100k', 'en': 'Initial $100k' },
+};
+
+function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    applyLang(currentLang);
+}
+
+function applyLang(lang) {
+    // Toggle button labels
+    document.getElementById('lang-en-label').className = lang === 'en' ? 'active' : 'inactive';
+    document.getElementById('lang-zh-label').className = lang === 'zh' ? 'active' : 'inactive';
+
+    // Static text via data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (i18n[key] && i18n[key][lang]) {
+            el.textContent = i18n[key][lang];
+        }
+    });
+
+    // Plotly chart titles and labels
+    try {
+        var chartMap = {
+            'equity': {
+                'title': 'chart-equity-title',
+                'xaxis': { 'title': { 'text': i18n['chart-equity-x'][lang] } },
+                'yaxis': { 'title': { 'text': i18n['chart-equity-y'][lang] } },
+                'annotations[0]': { 'text': i18n['annotation-initial'][lang] },
+            },
+            'drawdown': {
+                'title': 'chart-drawdown-title',
+                'xaxis': { 'title': { 'text': i18n['chart-drawdown-x'][lang] } },
+                'yaxis': { 'title': { 'text': i18n['chart-drawdown-y'][lang] } },
+            },
+            'ranking': {
+                'title': 'chart-ranking-title',
+                'xaxis': { 'title': { 'text': i18n['chart-ranking-x'][lang] } },
+                'yaxis': { 'title': { 'text': i18n['chart-ranking-y'][lang] } },
+            },
+        };
+
+        Object.keys(chartMap).forEach(function(chartId) {
+            var section = document.querySelector('[data-chart="' + chartId + '"]');
+            if (!section) return;
+            var plotDiv = section.querySelector('.js-plotly-plot');
+            if (!plotDiv) return;
+
+            var updates = JSON.parse(JSON.stringify(chartMap[chartId]));
+            updates['title'] = { 'text': i18n[chartMap[chartId]['title']][lang], 'font': { 'size': 18 } };
+
+            Plotly.relayout(plotDiv, updates);
+
+            // Update trace names (dropdown/legend text)
+            var strats = ['rs_momentum', 'sentiment_driven', 'mean_reversion', 'earnings_event', 'SPY'];
+            var stratLabelsZh = ['RS 动量', '情绪驱动', '均值回归', '财报事件', 'SPY 基准'];
+            var stratLabelsEn = ['RS Momentum', 'Sentiment', 'Mean Rev', 'Earnings', 'SPY'];
+            var labels = lang === 'zh' ? stratLabelsZh : stratLabelsEn;
+            var updateTraces = { name: labels, 'hovertemplate': [] };
+            var hoverTmpl = lang === 'zh'
+                ? '%{x}<br>%{y:,.2f}<extra>%{fullData.name}</extra>'
+                : '%{x}<br>%{y:,.2f}%<extra>%{fullData.name}</extra>';
+
+            plotDiv.querySelectorAll('.scatterlayer .trace').forEach(function(traceEl, idx) {
+                var traceIdx = idx;
+                // Only update strat traces (not end labels)
+                if (traceIdx < strats.length) {
+                    Plotly.restyle(plotDiv, {
+                        name: labels[traceIdx % strats.length],
+                        'hovertemplate': [hoverTmpl],
+                    }, [traceIdx]);
+                }
+            });
+        });
+    } catch(e) {
+        console.log('Lang toggle chart update:', e.message);
+    }
+
+    // Update date/time text
+    var dateEl = document.getElementById('update-date');
+    if (dateEl) {
+        var dateStr = new Date().toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+        dateEl.textContent = (lang === 'zh' ? '' : '') + dateStr;
+    }
+    var timeEl = document.getElementById('update-time');
+    if (timeEl) {
+        var prefix = lang === 'zh' ? '更新于 ' : 'Updated ';
+        timeEl.textContent = prefix + new Date().toLocaleTimeString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+}
+
+document.getElementById('update-date').textContent = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric', month: 'long', day: 'numeric'
+});
+document.getElementById('update-time').textContent = '更新于 ' + new Date().toLocaleTimeString('zh-CN', {
+    hour: '2-digit', minute: '2-digit'
+});
+</script>
+</body>
+</html>
